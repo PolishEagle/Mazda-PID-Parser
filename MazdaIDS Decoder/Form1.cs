@@ -60,19 +60,23 @@ namespace MazdaIDS_Decoder
 
             // Get selected index before we go to a separate thread
             List<int> indices = new List<int>();
-            indices.AddRange(lstLogFiles.SelectedIndices.Cast<int>());
+            indices.AddRange(lstLogFiles.CheckedIndices.Cast<int>());
+
+            // get the temperature units
+            var celsiusChecked = radioCelsius.Checked;
 
             Task convert = Task.Run(() =>
             {
                 SetEssentialControlsEnable(false);
                 SetStatusBarText("Conversion: running...");
 
-                _mazdaLogParser.ConvertFileToCSV(indices);
+                _mazdaLogParser.ConvertFileToCSV(indices, celsiusChecked);
                 
                 SetStatusBarText(lblStatus.Text = "Conversion: Completed!");
                 SetEssentialControlsEnable(true);
 
-                PlotDataOnChart(string.Empty);
+                // TODO: Plotting disabled
+                //PlotDataOnChart(string.Empty);
             });
         }
 
@@ -98,11 +102,11 @@ namespace MazdaIDS_Decoder
             lstLogFiles.Enabled = enabled;
         }
 
-        private void PlotDataOnChart(string noneuse)
+        private void PlotDataOnChart(string noneuse, bool isCelsius)
         {
             if (InvokeRequired)
             {
-                Invoke((Action<string>)PlotDataOnChart, string.Empty);
+                Invoke((Action<string, bool>)PlotDataOnChart, string.Empty);
                 return;
             }
 
@@ -121,7 +125,7 @@ namespace MazdaIDS_Decoder
 
                         foreach (var entry in pid.DataEntries)
                         {
-                            var convertedValue = (double)pid.GetConvertedValue(entry.Value);
+                            var convertedValue = (double)pid.GetConvertedValue(entry.Value, isCelsius);
 
                             chart1.Series[pid.PidName].ToolTip = "#VALY, #VALX";
                             chart1.Series[pid.PidName].Points.Add(new DataPoint(entry.Time, convertedValue));

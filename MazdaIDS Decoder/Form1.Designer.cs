@@ -28,8 +28,8 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Legend legend2 = new System.Windows.Forms.DataVisualization.Charting.Legend();
             this.lstLogFiles = new System.Windows.Forms.CheckedListBox();
             this.btnClear = new System.Windows.Forms.Button();
             this.btnConvert = new System.Windows.Forms.Button();
@@ -39,8 +39,11 @@
             this.tabCtrl = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.tabPage2 = new System.Windows.Forms.TabPage();
-            this.chart1 = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.chkPids = new System.Windows.Forms.ListBox();
+            this.chart1 = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.radioCelsius = new System.Windows.Forms.RadioButton();
+            this.radioFahrenheit = new System.Windows.Forms.RadioButton();
+            this.lblTemps = new System.Windows.Forms.Label();
             this.statusBar.SuspendLayout();
             this.tabCtrl.SuspendLayout();
             this.tabPage1.SuspendLayout();
@@ -122,6 +125,9 @@
             // tabPage1
             // 
             this.tabPage1.BackColor = System.Drawing.Color.WhiteSmoke;
+            this.tabPage1.Controls.Add(this.lblTemps);
+            this.tabPage1.Controls.Add(this.radioFahrenheit);
+            this.tabPage1.Controls.Add(this.radioCelsius);
             this.tabPage1.Controls.Add(this.label1);
             this.tabPage1.Controls.Add(this.lstLogFiles);
             this.tabPage1.Controls.Add(this.btnConvert);
@@ -145,26 +151,6 @@
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "Charts";
             // 
-            // chart1
-            // 
-            this.chart1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            chartArea1.Name = "ChartArea1";
-            this.chart1.ChartAreas.Add(chartArea1);
-            legend1.IsDockedInsideChartArea = false;
-            legend1.LegendStyle = System.Windows.Forms.DataVisualization.Charting.LegendStyle.Column;
-            legend1.MaximumAutoSize = 10F;
-            legend1.Name = "Legend1";
-            legend1.TableStyle = System.Windows.Forms.DataVisualization.Charting.LegendTableStyle.Tall;
-            this.chart1.Legends.Add(legend1);
-            this.chart1.Location = new System.Drawing.Point(6, 25);
-            this.chart1.Name = "chart1";
-            this.chart1.Size = new System.Drawing.Size(886, 359);
-            this.chart1.TabIndex = 0;
-            this.chart1.Text = "chart1";
-            this.chart1.MouseClick += new System.Windows.Forms.MouseEventHandler(this.MazdaChart_MouseDown);
-            // 
             // chkPids
             // 
             this.chkPids.FormattingEnabled = true;
@@ -173,6 +159,59 @@
             this.chkPids.Size = new System.Drawing.Size(158, 17);
             this.chkPids.TabIndex = 2;
             this.chkPids.SelectedIndexChanged += new System.EventHandler(this.chkPids_SelectedIndexChanged);
+            // 
+            // chart1
+            // 
+            this.chart1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            chartArea2.Name = "ChartArea1";
+            this.chart1.ChartAreas.Add(chartArea2);
+            legend2.IsDockedInsideChartArea = false;
+            legend2.LegendStyle = System.Windows.Forms.DataVisualization.Charting.LegendStyle.Column;
+            legend2.MaximumAutoSize = 10F;
+            legend2.Name = "Legend1";
+            legend2.TableStyle = System.Windows.Forms.DataVisualization.Charting.LegendTableStyle.Tall;
+            this.chart1.Legends.Add(legend2);
+            this.chart1.Location = new System.Drawing.Point(6, 25);
+            this.chart1.Name = "chart1";
+            this.chart1.Size = new System.Drawing.Size(886, 359);
+            this.chart1.TabIndex = 0;
+            this.chart1.Text = "chart1";
+            this.chart1.MouseClick += new System.Windows.Forms.MouseEventHandler(this.MazdaChart_MouseDown);
+            // 
+            // radioCelsius
+            // 
+            this.radioCelsius.AutoSize = true;
+            this.radioCelsius.Checked = true;
+            this.radioCelsius.Location = new System.Drawing.Point(359, 11);
+            this.radioCelsius.Name = "radioCelsius";
+            this.radioCelsius.Size = new System.Drawing.Size(58, 17);
+            this.radioCelsius.TabIndex = 4;
+            this.radioCelsius.TabStop = true;
+            this.radioCelsius.Text = "Celsius";
+            this.radioCelsius.UseVisualStyleBackColor = true;
+            // 
+            // radioFahrenheit
+            // 
+            this.radioFahrenheit.AutoSize = true;
+            this.radioFahrenheit.Location = new System.Drawing.Point(423, 11);
+            this.radioFahrenheit.Name = "radioFahrenheit";
+            this.radioFahrenheit.Size = new System.Drawing.Size(75, 17);
+            this.radioFahrenheit.TabIndex = 5;
+            this.radioFahrenheit.TabStop = true;
+            this.radioFahrenheit.Text = "Fahrenheit";
+            this.radioFahrenheit.UseVisualStyleBackColor = true;
+            // 
+            // lblTemps
+            // 
+            this.lblTemps.AutoSize = true;
+            this.lblTemps.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblTemps.Location = new System.Drawing.Point(238, 12);
+            this.lblTemps.Name = "lblTemps";
+            this.lblTemps.Size = new System.Drawing.Size(115, 13);
+            this.lblTemps.TabIndex = 6;
+            this.lblTemps.Text = "Temperature Units:";
             // 
             // Form1
             // 
@@ -212,6 +251,9 @@
         private System.Windows.Forms.TabPage tabPage2;
         private System.Windows.Forms.DataVisualization.Charting.Chart chart1;
         private System.Windows.Forms.ListBox chkPids;
+        private System.Windows.Forms.RadioButton radioCelsius;
+        private System.Windows.Forms.Label lblTemps;
+        private System.Windows.Forms.RadioButton radioFahrenheit;
     }
 }
 

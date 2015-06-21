@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define MAZDA_IDS_FOLDER
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -15,8 +17,13 @@ namespace MazdaIDS_Decoder
         private byte[] DATA_END_MAGIC = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0xD4, 0x01, 0x00 };
         internal string[] PIDS = new string[] { "AFR", "APP", "BAT", "FUEL_PRES", "IAT", "KNOCKR",
                                                 "LOAD", "MAF_V", "MAFg/s", "MAP", "RPM", "SHRTFT",
-                                                "SPARKADV", "Throttle Position", "VSS", "VT_ACT",
-                                                "WGC" };
+                                                "SPARKADV", "TP1_MZ", "TP_REL", "VSS", "VT_ACT",
+                                                "LONGFT", "WGC", "FUELPW" };
+        internal string[] PID_TITLES = new string[] { "Actual AFR (AFR)", "APP (%)", "Boost Air Temp. (°C)",
+                                                "FUEL_PRES (PSI)", "Intake Air Temp. (°C)", "KNOCKR (°)",
+                                                "Calculated Load (Load)", "MAF Voltage (V)", "Mass Airflow (g/s)", "Boost (PSI)",
+                                                "RPM", "Short Term FT (%)", "Spark Adv. (°)", "Throttle Position (%)", "Relative Throttle Position (%)",
+                                                "Speed (KPH)", "Intake Valve Adv. (°)", "Long Term FT (%)", "Wastegate Duty (%) (%)", "Injector Duty (%)" };
 
         // How many bytes after the start of the magic where the data starts
         private const int DATA_STARTS_AHEAD = 53;
@@ -24,10 +31,10 @@ namespace MazdaIDS_Decoder
         // How far back to look for the text
         private const int DESCRIPTION_PARSE_ROLLBACK = 843;
 
-        private const int BUFFER_SIZE = 112000;
-        private const int PREPEND_SIZE = 8000;
+        private const int BUFFER_SIZE = 4539422;
 
         private const string MAZDA_IDS_LOG_PATH = @"C:\ProgramData\Ford Motor Company\IDS\Sessions";
+        private const string USER_LOG_FILES = @"C:\Users\janw\Documents\SPEED3\VersaTune Maps";
         private const string MAZDA_IDS_LOG_EXT = ".ddl";
 
         private List<FileInfo> _logs = new List<FileInfo>();
@@ -42,30 +49,56 @@ namespace MazdaIDS_Decoder
         {
             get { return _logs; }
         }
+
+        private void UpdateTempUnits(bool celsiusChecked)
+        {
+            for (int i = 0; i < PID_TITLES.Length; i++)
+            {
+                if (!celsiusChecked && PID_TITLES[i].Contains("(°C)"))
+                {
+                    PID_TITLES[i] = PID_TITLES[i].Replace("(°C)", "(°F)");
+                }
+                else if (celsiusChecked && PID_TITLES[i].Contains("(°F)"))
+                {
+                    PID_TITLES[i] = PID_TITLES[i].Replace("(°F)", "(°C)");
+                }
+            }
+        }
+
+
         
         public int ReadAvailableMazdaFiles()
         {
+#if MAZDA_IDS_FOLDER
             // Open the default directory and check for the DDL files
             foreach (var logFile in Directory.EnumerateFiles(MAZDA_IDS_LOG_PATH, "*" + MAZDA_IDS_LOG_EXT))
             {
                 _logs.Add(new FileInfo(logFile));
             }
+#else
+
+            foreach (var logFile in Directory.EnumerateFiles(USER_LOG_FILES, "*" + MAZDA_IDS_LOG_EXT))
+            {
+                _logs.Add(new FileInfo(logFile));
+            }
+#endif
 
             return _logs.Count;
         }
 
-        public bool ConvertFileToCSV(ICollection<int> indices)
+        public bool ConvertFileToCSV(ICollection<int> indices, bool isCelsius)
         {
             if (indices.Count < 1)
             {
                 return false;
             }
 
-            List<PidData> data = new List<PidData>();
+            // update the title units accordingly
+            UpdateTempUnits(isCelsius);
 
             foreach (int index in indices)
             {
-                data.Clear();
+                List<PidData> data = new List<PidData>();
 
                 ReadDDLFile(data, _logs[index]);
 
@@ -78,7 +111,7 @@ namespace MazdaIDS_Decoder
                 long maxTime = long.MinValue;
                 GetMaxAndMinTime(data, ref minTime, ref maxTime);
 
-                FormatAndCreateCSV(_logs[index], minTime, maxTime);
+                FormatAndCreateCSV(_logs[index], minTime, maxTime, isCelsius);
             }
 
             return true;
@@ -93,66 +126,97 @@ namespace MazdaIDS_Decoder
             // Read the file
             using (FileStream stream = File.Open(info.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-                int foundSpot = -1;
-                int endSpot = -1;
+                long foundSpot = -1;
+                long endSpot = -1;
                 long offset = 0;
+                long bytesRead = 0;
                 long time = 0;
                 uint value = 0;
+                int minBlockSize = 0;
 
-                int readSize = BUFFER_SIZE + PREPEND_SIZE;
-                do
+                long readSize = stream.Length; // BUFFER_SIZE;
+                byte[] buffer = new byte[readSize];
+                while ((bytesRead = stream.Read(buffer, 0, (int)readSize)) != 0)
                 {
-                    byte[] buffer = new byte[readSize];
-                    offset = stream.Read(buffer, 0, readSize);
-
-                    foundSpot = IndexOf(buffer, DATA_MAGIC);
-                    endSpot = IndexOf(buffer, DATA_END_MAGIC, foundSpot + 1);
-
-                    if (foundSpot != -1 && endSpot != -1 && endSpot > foundSpot)
+                    // go through the buffer
+                    do
                     {
-                        // Get the PID name
-                        string pidName = RetrievePID(stream, foundSpot, buffer.Length);
+                        foundSpot = IndexOf(buffer, DATA_MAGIC, offset);
+                        endSpot = IndexOf(buffer, DATA_END_MAGIC, foundSpot == -1 ? offset + 1 : foundSpot);
 
-                        if (string.IsNullOrEmpty(pidName))
+                        if (foundSpot != -1 && endSpot != -1 && endSpot > (foundSpot + DATA_STARTS_AHEAD))
                         {
-                            throw new Exception("Couldn't find PID name.");
+                            if (minBlockSize == 0)
+                            {
+                                minBlockSize = (int)endSpot - (int)foundSpot;
+                            }
+
+                            // Get the PID name
+                            // string pidName = RetrievePID(stream, foundSpot, buffer.Length);
+                            string pidName = RetrievePIDFromArray(buffer, foundSpot);
+
+                            if (!string.IsNullOrEmpty(pidName))
+                            {
+                                foundSpot += DATA_STARTS_AHEAD;
+
+                                PidData pid = new PidData(pidName);
+
+                                // Get the time from the log
+                                while (foundSpot < endSpot)
+                                {
+                                    time = ReadTimestamp(buffer, ref foundSpot);
+
+                                    // Get the value from the log
+                                    value = ReadValue(buffer, ref foundSpot);
+
+                                    pid.AddData(time, value);
+                                }
+
+                                // Save the dataset
+                                data.Add(pid);
+                            }
                         }
 
-                        foundSpot += DATA_STARTS_AHEAD;
-
-                        PidData pid = new PidData(pidName);
-                        
-                        // Get the time from the log
-                        while (foundSpot < endSpot)
+                        if (foundSpot != -1 && endSpot != -1)
                         {
-                            time = ReadTimestamp(buffer, ref foundSpot);
-
-                            // Get the value from the log
-                            value = ReadValue(buffer, ref foundSpot);
-
-                            pid.AddData(time, value);
+                            // Advance in the array
+                            offset = endSpot;
                         }
+                        else
+                        {
+                            if ((offset + minBlockSize) <= bytesRead)
+                            {
+                                offset += minBlockSize;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                    } while (offset < bytesRead);
 
-                        // Save the dataset
-                        data.Add(pid);
-                    }
+                    offset = 0;
 
-                    if (stream.Position != stream.Length)
+                    if (stream.Position == stream.Length)
                     {
-                        stream.Seek(-(PREPEND_SIZE * 2), SeekOrigin.Current);
+                        break;
                     }
-
-                    readSize = (int)Math.Max(0, Math.Min(BUFFER_SIZE + PREPEND_SIZE, stream.Length - stream.Position));
-                } while (readSize != 0);
+                    else
+                    {
+                        stream.Position -= (int)(minBlockSize * 0.85);
+                        readSize = (int)Math.Max(0, Math.Min(BUFFER_SIZE, stream.Length - stream.Position));
+                        buffer = new byte[readSize];
+                    }
+                }
             }
         }
 
-        private static int IndexOf(byte[] arrayToSearchThrough, byte[] patternToFind, int offset = 0)
+        private static long IndexOf(byte[] arrayToSearchThrough, byte[] patternToFind, long offset = 0)
         {
             if (patternToFind.Length > arrayToSearchThrough.Length || offset < 0)
                 return -1;
 
-            for (int i = offset; i < arrayToSearchThrough.Length - patternToFind.Length; i++)
+            for (long i = offset; i < arrayToSearchThrough.Length - patternToFind.Length; i++)
             {
                 bool found = true;
                 for (int j = 0; j < patternToFind.Length; j++)
@@ -171,7 +235,7 @@ namespace MazdaIDS_Decoder
             return -1;
         }
 
-        private long ReadTimestamp(byte[] buffer, ref int foundSpot)
+        private long ReadTimestamp(byte[] buffer, ref long foundSpot)
         {
             // Not enough data to read from the buffer
             if ((foundSpot + 4) > buffer.Length)
@@ -187,7 +251,7 @@ namespace MazdaIDS_Decoder
             return time;
         }
 
-        private uint ReadValue(byte[] buffer, ref int foundSpot)
+        private uint ReadValue(byte[] buffer, ref long foundSpot)
         {
             // Not enough data to read from the buffer
             if ((foundSpot + 2) >= buffer.Length)
@@ -240,6 +304,34 @@ namespace MazdaIDS_Decoder
             return pidName;
         }
 
+        private string RetrievePIDFromArray(byte[] buffer, long offset)
+        {
+            string pidName = string.Empty;
+
+            try
+            {
+                byte[] buf = new byte[DESCRIPTION_PARSE_ROLLBACK];
+
+                for (int i = 0; i < DESCRIPTION_PARSE_ROLLBACK; i++)
+                {
+                    buf[i] = buffer[offset + i - DESCRIPTION_PARSE_ROLLBACK];
+                }
+
+                foreach (string pid in PIDS)
+                {
+                    if (IndexOf(buf, Encoding.Default.GetBytes(pid)) != -1)
+                    {
+                        pidName = pid;
+                        break;
+                    }
+                }
+            }
+            catch (Exception e)
+            { }
+
+            return pidName;
+        }
+
         private void GetMaxAndMinTime(List<PidData> data, ref long minTime, ref long maxTime)
         {
             foreach (PidData pid in data)
@@ -255,13 +347,14 @@ namespace MazdaIDS_Decoder
             }
         }
 
-        private void FormatAndCreateCSV(FileInfo info, long minTime, long maxTime)
+        private void FormatAndCreateCSV(FileInfo info, long minTime, long maxTime, bool isCelsius)
         {
             // Stores the index of the current position in the list for each PID entry
             Dictionary<string, int> currentPidIndex = new Dictionary<string, int>();
             long currentTime = minTime;
 
             List<string> pidsPresent = new List<string>();
+            List<string> pidTitles = new List<string>();
             var pidList = _convertedData[info];
 
             for(int i = 0; i < pidList.Count; i++)
@@ -272,40 +365,56 @@ namespace MazdaIDS_Decoder
                 currentPidIndex.Add(pidList[i].PidName, 0);
             }
 
-            string tempFile = Guid.NewGuid().ToString();
-            using (StreamWriter wr = new StreamWriter(string.Format(@"{1}\{0}.csv", tempFile, info.DirectoryName)))
+            foreach (string pid in pidsPresent)
+            {
+                var index = Array.IndexOf(PIDS, pid);
+                pidTitles.Add(PID_TITLES[index]);
+            }
+
+            // string tempFile = Guid.NewGuid().ToString();
+            string tempFile = info.Name + "-" + Guid.NewGuid().ToString().Substring(0, 8);
+            using (StreamWriter wr = new StreamWriter(string.Format(@"{1}\{0}.csv", tempFile, info.DirectoryName), false, Encoding.GetEncoding("Windows-1252")))
             {
                 wr.Write("Time,");
 
                 // Write the headers
-                wr.Write(string.Format("{0}{1}", string.Join(",", pidsPresent), Environment.NewLine));
+                wr.Write(string.Format("{0}{1}", string.Join(",", pidTitles), Environment.NewLine));
 
-                PrintRowToCSV(currentTime, currentPidIndex, pidList, wr);
+                PrintRowToCSV(currentTime, currentPidIndex, pidList, wr, isCelsius);
 
                 // Loop until we've displayed all the values.
                 do
                 {
                     GetNextPids(currentPidIndex, pidList, ref currentTime);
-                    PrintRowToCSV(currentTime, currentPidIndex, pidList, wr);
+                    PrintRowToCSV(currentTime, currentPidIndex, pidList, wr, isCelsius);
                 } while (currentTime < maxTime);
             }
         }
 
-        private void PrintRowToCSV(long currentTime, Dictionary<string, int> currentPidIndex, List<PidData> pidList, StreamWriter wr)
+        private void PrintRowToCSV(long currentTime, Dictionary<string, int> currentPidIndex, List<PidData> pidList, StreamWriter wr, bool isCelsius)
         {
             // Write the time
             wr.Write(string.Format("{0},", currentTime));
 
-            // Write the first row values
+            var pid = pidList.Where<PidData>(p => p.PidName.Equals("RPM")).First<PidData>();
+            var rpmPidDataIndex = pidList.IndexOf(pid);
+
             for (int i = 0; i < pidList.Count; i++)
             {
                 var readIndex = currentPidIndex[pidList[i].PidName];
-                var value = pidList[i].GetConvertedValue(pidList[i].DataEntries[readIndex].Value);
+                var value = pidList[i].GetConvertedValue(pidList[i].DataEntries[readIndex].Value, isCelsius);
+
+                var rpmIndex = currentPidIndex["RPM"];
+                var rpm = pidList[rpmPidDataIndex].GetConvertedValue(pidList[rpmPidDataIndex].DataEntries[rpmIndex].Value, isCelsius);
 
                 // Write the values to file
                 if (pidList[i].PidName.Equals("LOAD"))
                 {
                     wr.Write(string.Format("{0:0.000}", value));
+                }
+                else if (pidList[i].PidName.Equals("FUELPW"))
+                {
+                    wr.Write(string.Format("{0:0.00}", (double)((double)value * (double)rpm) / 1200));
                 }
                 else
                 {
@@ -401,6 +510,7 @@ namespace MazdaIDS_Decoder
         {
             private string _pidName;
             private List<PidEntry> _dataEntries;
+            private bool _isCelsius;
 
             public string PidName
             {
@@ -430,7 +540,7 @@ namespace MazdaIDS_Decoder
                 _dataEntries.Add(newEntry);
             }
 
-            public object GetConvertedValue(uint value)
+            public object GetConvertedValue(uint value, bool isCelsius)
             {
                 // AFR:  (<value> * 49) / 430
                 // APP:  (<value> * 100) / 255                   %
@@ -458,12 +568,12 @@ namespace MazdaIDS_Decoder
                         return (double)(useValue * 49) / 430;
                     case "APP":
                         return (double)(useValue * 100) / 255;
-                    case "BAT":
-                        return (double)useValue - 40;
                     case "FUEL_PRES":
                         return (double)useValue * 1.45;
                     case "IAT":
-                        return (double)useValue - 40;
+                    case "BAT":
+                        var celsius = (double)useValue - 40;
+                        return GetCorrectTemp(celsius, isCelsius);
                     case "KNOCKR":
                         return Math.Abs((double)(useValue * 0.001956) - 0.004898);
                     case "LOAD":
@@ -477,10 +587,11 @@ namespace MazdaIDS_Decoder
                     case "RPM":
                         return (double)useValue / 4;
                     case "SHRTFT":
+                    case "LONGFT":
                         return (double)((useValue - 128) * 100) / 128;
                     case "SPARKADV":
                         return (double)(useValue - 128) / 2;
-                    case "Throttle Position":
+                    case "TP1_MZ":
                         return (double)(useValue * 100) / 255;
                     case "VSS":
                         return (double)useValue;
@@ -493,9 +604,21 @@ namespace MazdaIDS_Decoder
                             return retVal;
                     case "WGC":
                         return (double)(useValue * 100) / 32768;
+                    case "TP_REL":
+                        return (double)(useValue * 100) / 255;
+                    case "FUELPW":
+                        return (double)useValue / 125;
+                    default:
+                        return useValue;
                 }
+            }
 
-                return null;
+            private double GetCorrectTemp(double temp, bool isCelsius)
+            {
+                if (isCelsius)
+                    return temp;
+                else
+                    return ((temp * 9) / 5) + 32;
             }
         }
     }

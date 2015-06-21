@@ -1,9 +1,0 @@
-c:\users\janw\documents\visual studio 2013\Projects\MazdaIDS Decoder\MazdaIDS Decoder\bin\Debug\MazdaIDS Decoder.exe.config
-c:\users\janw\documents\visual studio 2013\Projects\MazdaIDS Decoder\MazdaIDS Decoder\bin\Debug\MazdaIDS Decoder.exe
-c:\users\janw\documents\visual studio 2013\Projects\MazdaIDS Decoder\MazdaIDS Decoder\bin\Debug\MazdaIDS Decoder.pdb
-c:\users\janw\documents\visual studio 2013\Projects\MazdaIDS Decoder\MazdaIDS Decoder\obj\Debug\MazdaIDS Decoder.csprojResolveAssemblyReference.cache
-c:\users\janw\documents\visual studio 2013\Projects\MazdaIDS Decoder\MazdaIDS Decoder\obj\Debug\MazdaIDS_Decoder.Properties.Resources.resources
-c:\users\janw\documents\visual studio 2013\Projects\MazdaIDS Decoder\MazdaIDS Decoder\obj\Debug\MazdaIDS Decoder.csproj.GenerateResource.Cache
-c:\users\janw\documents\visual studio 2013\Projects\MazdaIDS Decoder\MazdaIDS Decoder\obj\Debug\MazdaIDS Decoder.exe
-c:\users\janw\documents\visual studio 2013\Projects\MazdaIDS Decoder\MazdaIDS Decoder\obj\Debug\MazdaIDS Decoder.pdb
-c:\users\janw\documents\visual studio 2013\Projects\MazdaIDS Decoder\MazdaIDS Decoder\obj\Debug\MazdaIDS_Decoder.Form1.resources
