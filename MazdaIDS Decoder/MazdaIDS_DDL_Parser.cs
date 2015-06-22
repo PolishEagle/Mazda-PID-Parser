@@ -20,10 +20,10 @@ namespace MazdaIDS_Decoder
                                                 "SPARKADV", "TP1_MZ", "TP_REL", "VSS", "VT_ACT",
                                                 "LONGFT", "WGC", "FUELPW" };
         internal string[] PID_TITLES = new string[] { "Actual AFR (AFR)", "APP (%)", "Boost Air Temp. (°C)",
-                                                "FUEL_PRES (PSI)", "Intake Air Temp. (°C)", "KNOCKR (°)",
+                                                "HPFP (PSI)", "Intake Air Temp. (°C)", "KNOCKR (°)",
                                                 "Calculated Load (Load)", "MAF Voltage (V)", "Mass Airflow (g/s)", "Boost (PSI)",
                                                 "RPM", "Short Term FT (%)", "Spark Adv. (°)", "Throttle Position (%)", "Relative Throttle Position (%)",
-                                                "Speed (KPH)", "Intake Valve Adv. (°)", "Long Term FT (%)", "Wastegate Duty (%) (%)", "Injector Duty (%)" };
+                                                "Speed (KPH)", "Intake Valve Adv. (°)", "Long Term FT (%)", "Wastegate Duty (%)", "Injector Duty (%)" };
 
         // How many bytes after the start of the magic where the data starts
         private const int DATA_STARTS_AHEAD = 53;
@@ -34,7 +34,7 @@ namespace MazdaIDS_Decoder
         private const int BUFFER_SIZE = 4539422;
 
         private const string MAZDA_IDS_LOG_PATH = @"C:\ProgramData\Ford Motor Company\IDS\Sessions";
-        private const string USER_LOG_FILES = @"C:\Users\janw\Documents\SPEED3\VersaTune Maps";
+        private const string USER_LOG_FILES = @"C:\Users\janw\Documents\SPEED3\VersaTune Maps\Mazda IDS Logs";
         private const string MAZDA_IDS_LOG_EXT = ".ddl";
 
         private List<FileInfo> _logs = new List<FileInfo>();
