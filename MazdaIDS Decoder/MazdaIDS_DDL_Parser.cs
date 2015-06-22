@@ -375,7 +375,7 @@ namespace MazdaIDS_Decoder
             string tempFile = info.Name + "-" + Guid.NewGuid().ToString().Substring(0, 8);
             using (StreamWriter wr = new StreamWriter(string.Format(@"{1}\{0}.csv", tempFile, info.DirectoryName), false, Encoding.GetEncoding("Windows-1252")))
             {
-                wr.Write("Time,");
+                wr.Write("Time (sec),");
 
                 // Write the headers
                 wr.Write(string.Format("{0}{1}", string.Join(",", pidTitles), Environment.NewLine));
@@ -394,7 +394,7 @@ namespace MazdaIDS_Decoder
         private void PrintRowToCSV(long currentTime, Dictionary<string, int> currentPidIndex, List<PidData> pidList, StreamWriter wr, bool isCelsius)
         {
             // Write the time
-            wr.Write(string.Format("{0},", currentTime));
+            wr.Write(string.Format("{0:0.000},", (double)currentTime/1000));
 
             var pid = pidList.Where<PidData>(p => p.PidName.Equals("RPM")).First<PidData>();
             var rpmPidDataIndex = pidList.IndexOf(pid);
