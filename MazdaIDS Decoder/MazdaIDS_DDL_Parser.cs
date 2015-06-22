@@ -19,8 +19,8 @@ namespace MazdaIDS_Decoder
                                                 "LOAD", "MAF_V", "MAFg/s", "MAP", "RPM", "SHRTFT",
                                                 "SPARKADV", "TP1_MZ", "TP_REL", "VSS", "VT_ACT",
                                                 "LONGFT", "WGC", "FUELPW" };
-        internal string[] PID_TITLES = new string[] { "Actual AFR (AFR)", "APP (%)", "Boost Air Temp. (°C)",
-                                                "FUEL_PRES (PSI)", "Intake Air Temp. (°C)", "KNOCKR (°)",
+        internal string[] PID_TITLES = new string[] { "Actual AFR (AFR)", "Accelerator Pedal Position (%)", "Boost Air Temp. (°C)",
+                                                "HPFP (PSI)", "Intake Air Temp. (°C)", "KNOCKR (°)",
                                                 "Calculated Load (Load)", "MAF Voltage (V)", "Mass Airflow (g/s)", "Boost (PSI)",
                                                 "RPM", "Short Term FT (%)", "Spark Adv. (°)", "Throttle Position (%)", "Relative Throttle Position (%)",
                                                 "Speed (KPH)", "Intake Valve Adv. (°)", "Long Term FT (%)", "Wastegate Duty (%) (%)", "Injector Duty (%)" };
@@ -34,7 +34,7 @@ namespace MazdaIDS_Decoder
         private const int BUFFER_SIZE = 4539422;
 
         private const string MAZDA_IDS_LOG_PATH = @"C:\ProgramData\Ford Motor Company\IDS\Sessions";
-        private const string USER_LOG_FILES = @"C:\Users\janw\Documents\SPEED3\VersaTune Maps";
+        private const string USER_LOG_FILES = @"C:\Users\janw\Documents\SPEED3\VersaTune Maps\Mazda IDS Logs";
         private const string MAZDA_IDS_LOG_EXT = ".ddl";
 
         private List<FileInfo> _logs = new List<FileInfo>();
@@ -334,12 +334,19 @@ namespace MazdaIDS_Decoder
 
         private void GetMaxAndMinTime(List<PidData> data, ref long minTime, ref long maxTime)
         {
+            minTime = -1;
+
             foreach (PidData pid in data)
             {
+                if (pid.DataEntries[0].Time > minTime)
+                    minTime = pid.DataEntries[0].Time;
+
                 foreach (var entry in pid.DataEntries)
                 {
+                    /*
                     if (entry.Time < minTime)
                         minTime = entry.Time;
+                    */
 
                     if (entry.Time > maxTime)
                         maxTime = entry.Time;
@@ -375,7 +382,7 @@ namespace MazdaIDS_Decoder
             string tempFile = info.Name + "-" + Guid.NewGuid().ToString().Substring(0, 8);
             using (StreamWriter wr = new StreamWriter(string.Format(@"{1}\{0}.csv", tempFile, info.DirectoryName), false, Encoding.GetEncoding("Windows-1252")))
             {
-                wr.Write("Time,");
+                wr.Write("Time (sec),");
 
                 // Write the headers
                 wr.Write(string.Format("{0}{1}", string.Join(",", pidTitles), Environment.NewLine));
@@ -385,7 +392,7 @@ namespace MazdaIDS_Decoder
                 // Loop until we've displayed all the values.
                 do
                 {
-                    GetNextPids(currentPidIndex, pidList, ref currentTime);
+                    GetNextPids(currentPidIndex, pidList, ref currentTime, maxTime);
                     PrintRowToCSV(currentTime, currentPidIndex, pidList, wr, isCelsius);
                 } while (currentTime < maxTime);
             }
@@ -394,7 +401,7 @@ namespace MazdaIDS_Decoder
         private void PrintRowToCSV(long currentTime, Dictionary<string, int> currentPidIndex, List<PidData> pidList, StreamWriter wr, bool isCelsius)
         {
             // Write the time
-            wr.Write(string.Format("{0},", currentTime));
+            wr.Write(string.Format("{0:0.000},", (double)currentTime/1000));
 
             var pid = pidList.Where<PidData>(p => p.PidName.Equals("RPM")).First<PidData>();
             var rpmPidDataIndex = pidList.IndexOf(pid);
@@ -429,8 +436,41 @@ namespace MazdaIDS_Decoder
             wr.Write(Environment.NewLine);
         }
 
-        private void GetNextPids(Dictionary<string, int> currentPidEntry, List<PidData> pidList, ref long currentTime)
+        private void GetNextPids(Dictionary<string, int> currentPidEntry, List<PidData> pidList, ref long currentTime, long maxTime)
         {
+            List<long> timesOfDiff = new List<long>();
+            long lowestTime = maxTime;
+
+            for (int i = 0; i < pidList.Count; i++)
+            {
+                var pid = pidList[i];
+
+                // Find the time of the first item to change.
+                for (int j = currentPidEntry[pid.PidName]; j < pid.DataEntries.Count - 1; j++)
+                {
+                    var currentEntry = pid.DataEntries[j];
+                    var nextEntry = pid.DataEntries[j + 1];
+
+                    if (currentEntry.Value != nextEntry.Value)
+                    {
+                        if (!timesOfDiff.Contains(nextEntry.Time))
+                        {
+                            timesOfDiff.Add(nextEntry.Time);
+                        }
+                        break;
+                    }
+                }
+            }
+
+            foreach (long curVal in timesOfDiff)
+            {
+                if (curVal <= lowestTime)
+                    lowestTime = curVal;
+            }
+
+            currentTime = lowestTime;
+
+            /*
             long newTime = long.MaxValue;
 
             for (int i = 0; i < pidList.Count; i++)
@@ -452,8 +492,7 @@ namespace MazdaIDS_Decoder
                     }
                 }
             }
-
-            currentTime = newTime;
+            */
 
             // Now that we have the newer time lets adjust the current PID indexes accordingly
             for (int i = 0; i < pidList.Count; i++)
@@ -465,7 +504,7 @@ namespace MazdaIDS_Decoder
                     var entry = pid.DataEntries[j];
                     var existingTime = pid.DataEntries[currentPidEntry[pid.PidName]];
 
-                    if (entry.Time <= newTime)
+                    if (entry.Time <= currentTime)
                     {
                         currentPidEntry[pid.PidName] = j;
                         break;
