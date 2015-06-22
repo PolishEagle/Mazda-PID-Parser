@@ -18,12 +18,13 @@ namespace MazdaIDS_Decoder
         internal string[] PIDS = new string[] { "AFR", "APP", "BAT", "FUEL_PRES", "IAT", "KNOCKR",
                                                 "LOAD", "MAF_V", "MAFg/s", "MAP", "RPM", "SHRTFT",
                                                 "SPARKADV", "TP1_MZ", "TP_REL", "VSS", "VT_ACT",
-                                                "LONGFT", "WGC", "FUELPW" };
+                                                "LONGFT", "WGC", "FUELPW", "BARO" };
         internal string[] PID_TITLES = new string[] { "Actual AFR (AFR)", "APP (%)", "Boost Air Temp. (°C)",
                                                 "HPFP (PSI)", "Intake Air Temp. (°C)", "KNOCKR (°)",
                                                 "Calculated Load (Load)", "MAF Voltage (V)", "Mass Airflow (g/s)", "Boost (PSI)",
                                                 "RPM", "Short Term FT (%)", "Spark Adv. (°)", "Throttle Position (%)", "Relative Throttle Position (%)",
-                                                "Speed (KPH)", "Intake Valve Adv. (°)", "Long Term FT (%)", "Wastegate Duty (%)", "Injector Duty (%)" };
+                                                "Speed (KPH)", "Intake Valve Adv. (°)", "Long Term FT (%)", "Wastegate Duty (%)", "Injector Duty (%)",
+                                                "Barometric Pressure (PSI)" };
 
         // How many bytes after the start of the magic where the data starts
         private const int DATA_STARTS_AHEAD = 53;
@@ -583,6 +584,7 @@ namespace MazdaIDS_Decoder
                     case "MAFg/s":
                         return (double)useValue / 100;
                     case "MAP":
+                    case "BARO":
                         return (double)useValue * 0.145;
                     case "RPM":
                         return (double)useValue / 4;
