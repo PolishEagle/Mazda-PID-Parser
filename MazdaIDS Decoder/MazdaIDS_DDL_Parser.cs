@@ -445,8 +445,8 @@ namespace MazdaIDS_Decoder
             {
                 var pid = pidList[i];
 
-                // Find the time of the first item to change.
-                for (int j = currentPidEntry[pid.PidName]; j < pid.DataEntries.Count - 1; j++)
+                var j = currentPidEntry[pid.PidName];
+                if (j < (pid.DataEntries.Count - 2))
                 {
                     var currentEntry = pid.DataEntries[j];
                     var nextEntry = pid.DataEntries[j + 1];
@@ -458,6 +458,26 @@ namespace MazdaIDS_Decoder
                             timesOfDiff.Add(nextEntry.Time);
                         }
                         break;
+                    }
+                }
+            }
+
+            // If no diff found, advance forward
+            if (timesOfDiff.Count == 0)
+            {
+                for (int i = 0; i < pidList.Count; i++)
+                {
+                    var pid = pidList[i];
+
+                    var j = currentPidEntry[pid.PidName];
+                    if (j < (pid.DataEntries.Count - 2))
+                    {
+                        var nextEntry = pid.DataEntries[j + 1];
+
+                        if (!timesOfDiff.Contains(nextEntry.Time))
+                        {
+                            timesOfDiff.Add(nextEntry.Time);
+                        }
                     }
                 }
             }
