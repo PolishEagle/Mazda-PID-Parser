@@ -432,51 +432,27 @@ namespace MazdaIDS_Decoder
 
         private void GetNextPids(Dictionary<string, int> currentPidEntry, List<PidData> pidList, ref long currentTime)
         {
-            long newTime = long.MaxValue;
-
-            for (int i = 0; i < pidList.Count; i++)
-            {
-                var pid = pidList[i];
-
-                for (int j = currentPidEntry[pid.PidName]; j < pid.DataEntries.Count; j++)
-                {
-                    var entry = pid.DataEntries[j];
-
-                    if (entry.Time > currentTime && entry.Time < newTime)
-                    {
-                        newTime = entry.Time;
-                        break;
-                    }
-                    else if (entry.Time > newTime)
-                    {
-                        break;
-                    }
-                }
-            }
-
-            currentTime = newTime;
+            long newTime = long.MinValue;
 
             // Now that we have the newer time lets adjust the current PID indexes accordingly
             for (int i = 0; i < pidList.Count; i++)
             {
                 var pid = pidList[i];
 
-                for (int j = currentPidEntry[pid.PidName] + 1; j < pid.DataEntries.Count; j++)
+                if ((currentPidEntry[pid.PidName] + 1) < pid.DataEntries.Count)
                 {
-                    var entry = pid.DataEntries[j];
-                    var existingTime = pid.DataEntries[currentPidEntry[pid.PidName]];
+                    currentPidEntry[pid.PidName]++;
+                }
 
-                    if (entry.Time <= newTime)
-                    {
-                        currentPidEntry[pid.PidName] = j;
-                        break;
-                    }
-                    else
-                    {
-                        break;
-                    }
+                var entry = pid.DataEntries[currentPidEntry[pid.PidName]];
+
+                if (entry.Time > newTime)
+                {
+                    newTime = entry.Time;
                 }
             }
+
+            currentTime = newTime;
         }
 
 
@@ -511,7 +487,6 @@ namespace MazdaIDS_Decoder
         {
             private string _pidName;
             private List<PidEntry> _dataEntries;
-            private bool _isCelsius;
 
             public string PidName
             {
