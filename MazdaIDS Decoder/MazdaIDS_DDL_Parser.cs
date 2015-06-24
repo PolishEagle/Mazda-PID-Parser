@@ -366,6 +366,7 @@ namespace MazdaIDS_Decoder
             // Stores the index of the current position in the list for each PID entry
             Dictionary<string, int> currentPidIndex = new Dictionary<string, int>();
             long currentTime = minTime;
+            long minMaxLogEntries = long.MaxValue;
 
             List<string> pidsPresent = new List<string>();
             List<string> pidTitles = new List<string>();
@@ -389,6 +390,17 @@ namespace MazdaIDS_Decoder
                 pidTitles.Add(PID_TITLES[index]);
             }
 
+            // Get the smallest list count
+            for (int i = 0; i < pidList.Count; i++)
+            {
+                var pid = pidList[i];
+
+                if (pid.DataEntries.Count < minMaxLogEntries)
+                {
+                    minMaxLogEntries = pid.DataEntries.Count;
+                }
+            }
+
             // string tempFile = Guid.NewGuid().ToString();
             string tempFile = info.Name + "-" + Guid.NewGuid().ToString().Substring(0, 8);
             using (StreamWriter wr = new StreamWriter(string.Format(@"{1}\{0}.csv", tempFile, info.DirectoryName), false, Encoding.GetEncoding("Windows-1252")))
@@ -401,11 +413,14 @@ namespace MazdaIDS_Decoder
                 PrintRowToCSV(currentTime, currentPidIndex, pidList, wr, isCelsius, minTime);
 
                 // Loop until we've displayed all the values.
+                long loops = 1;
                 do
                 {
-                    GetNextPids(currentPidIndex, pidList, ref currentTime);
+                    GetNextPids(currentPidIndex, pidList, minMaxLogEntries, ref currentTime);
                     PrintRowToCSV(currentTime, currentPidIndex, pidList, wr, isCelsius, minTime);
-                } while (currentTime < maxTime);
+
+                    loops++;
+                } while (loops <= minMaxLogEntries);
             }
         }
 
@@ -451,7 +466,7 @@ namespace MazdaIDS_Decoder
             wr.Write(Environment.NewLine);
         }
 
-        private void GetNextPids(Dictionary<string, int> currentPidEntry, List<PidData> pidList, ref long currentTime)
+        private void GetNextPids(Dictionary<string, int> currentPidEntry, List<PidData> pidList, long minMaxLogEntries, ref long currentTime)
         {
             long newTime = long.MinValue;
 
@@ -460,7 +475,7 @@ namespace MazdaIDS_Decoder
             {
                 var pid = pidList[i];
 
-                if ((currentPidEntry[pid.PidName] + 1) < pid.DataEntries.Count)
+                if ((currentPidEntry[pid.PidName] + 1) < minMaxLogEntries)
                 {
                     currentPidEntry[pid.PidName]++;
                 }
