@@ -102,7 +102,7 @@ namespace MazdaIDS_Decoder
             {
                 List<PidData> data = new List<PidData>();
 
-                ReadDDLFile(data, _logs[index]);
+                long firstRowUpperBounds = ReadDDLFile(data, _logs[index]);
 
                 if (data.Count != 0 && !_convertedData.ContainsKey(_logs[index]))
                 {
@@ -113,17 +113,19 @@ namespace MazdaIDS_Decoder
                 long maxTime = long.MinValue;
                 GetMaxAndMinTime(data, ref minTime, ref maxTime);
 
-                FormatAndCreateCSV(_logs[index], minTime, maxTime, isCelsius);
+                FormatAndCreateCSV(_logs[index], minTime, maxTime, isCelsius, firstRowUpperBounds);
             }
 
             return true;
         }
 
-        private void ReadDDLFile(List<PidData> data, FileInfo info)
+        private long ReadDDLFile(List<PidData> data, FileInfo info)
         {
+            long firstRowUpperBounds = 0;
+
             // Bail out if the log doesn't exist
             if (!info.Exists)
-                return;
+                return -1;
 
             // Read the file
             using (FileStream stream = File.Open(info.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -135,6 +137,14 @@ namespace MazdaIDS_Decoder
                 long time = 0;
                 uint value = 0;
                 int minBlockSize = 0;
+
+                // Get the first row upper bounds to determine if we remove any first row logs
+                byte[] rawData = new byte[4];
+                stream.Position = 8;
+                stream.Read(rawData, 0, rawData.Length);
+                foundSpot = 0;
+                firstRowUpperBounds = ReadTimestamp(rawData, ref foundSpot);
+                stream.Position = 0;
 
                 long readSize = stream.Length; // BUFFER_SIZE;
                 byte[] buffer = new byte[readSize];
@@ -211,9 +221,9 @@ namespace MazdaIDS_Decoder
                     }
                 }
             }
-        }
 
-        // TODO: the values don't appear to align later in the file, need to determine how they do it.
+            return firstRowUpperBounds;
+        }
 
         private static long IndexOf(byte[] arrayToSearchThrough, byte[] patternToFind, long offset = 0)
         {
@@ -351,7 +361,7 @@ namespace MazdaIDS_Decoder
             }
         }
 
-        private void FormatAndCreateCSV(FileInfo info, long minTime, long maxTime, bool isCelsius)
+        private void FormatAndCreateCSV(FileInfo info, long minTime, long maxTime, bool isCelsius, long firstRowUpperBounds)
         {
             // Stores the index of the current position in the list for each PID entry
             Dictionary<string, int> currentPidIndex = new Dictionary<string, int>();
@@ -363,10 +373,14 @@ namespace MazdaIDS_Decoder
 
             for(int i = 0; i < pidList.Count; i++)
             {
+                var firstRowIndex = 0;
                 pidsPresent.Add(pidList[i].PidName);
 
+                if (pidList[i].DataEntries[1].Time <= firstRowUpperBounds)
+                    firstRowIndex = 1;
+
                 // Add the PID's and their  respective indexes to the dictionary
-                currentPidIndex.Add(pidList[i].PidName, 0);
+                currentPidIndex.Add(pidList[i].PidName, firstRowIndex);
             }
 
             foreach (string pid in pidsPresent)
@@ -426,7 +440,7 @@ namespace MazdaIDS_Decoder
                 }
 
 #if PRINT_TIMES_FOR_ALL
-                wr.Write(" ({0})", pidList[i].DataEntries[readIndex].Time - minTime);
+                wr.Write(" ({0})", pidList[i].DataEntries[readIndex].Time);
 #endif
 
                 if (i < (pidList.Count - 1))
