@@ -1,4 +1,5 @@
 ﻿//#define MAZDA_IDS_FOLDER
+//#define PRINT_TIMES_FOR_ALL
 
 using System;
 using System.Collections.Generic;
@@ -212,6 +213,8 @@ namespace MazdaIDS_Decoder
             }
         }
 
+        // TODO: the values don't appear to align later in the file, need to determine how they do it.
+
         private static long IndexOf(byte[] arrayToSearchThrough, byte[] patternToFind, long offset = 0)
         {
             if (patternToFind.Length > arrayToSearchThrough.Length || offset < 0)
@@ -381,18 +384,18 @@ namespace MazdaIDS_Decoder
                 // Write the headers
                 wr.Write(string.Format("{0}{1}", string.Join(",", pidTitles), Environment.NewLine));
 
-                PrintRowToCSV(currentTime, currentPidIndex, pidList, wr, isCelsius);
+                PrintRowToCSV(currentTime, currentPidIndex, pidList, wr, isCelsius, minTime);
 
                 // Loop until we've displayed all the values.
                 do
                 {
                     GetNextPids(currentPidIndex, pidList, ref currentTime);
-                    PrintRowToCSV(currentTime, currentPidIndex, pidList, wr, isCelsius);
+                    PrintRowToCSV(currentTime, currentPidIndex, pidList, wr, isCelsius, minTime);
                 } while (currentTime < maxTime);
             }
         }
 
-        private void PrintRowToCSV(long currentTime, Dictionary<string, int> currentPidIndex, List<PidData> pidList, StreamWriter wr, bool isCelsius)
+        private void PrintRowToCSV(long currentTime, Dictionary<string, int> currentPidIndex, List<PidData> pidList, StreamWriter wr, bool isCelsius, long minTime)
         {
             // Write the time
             wr.Write(string.Format("{0:0.000},", (double)currentTime/1000));
@@ -421,6 +424,10 @@ namespace MazdaIDS_Decoder
                 {
                     wr.Write(string.Format("{0:0.00}", value));
                 }
+
+#if PRINT_TIMES_FOR_ALL
+                wr.Write(" ({0})", pidList[i].DataEntries[readIndex].Time - minTime);
+#endif
 
                 if (i < (pidList.Count - 1))
                 {
