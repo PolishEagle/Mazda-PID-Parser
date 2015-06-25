@@ -131,6 +131,9 @@ namespace MazdaIDS_Decoder
                 var dic = _mazdaLogParser.ParsedData;
                 var data = dic[_mazdaLogParser.Logs[lstLogFiles.SelectedIndex]];
 
+                chart1.Series.Clear();
+                chkPids.Items.Clear();
+
                 foreach (var pid in data)
                 {
                     var pidName = pid.PidName.Equals("FUELPW") ? "Injector Pulse Width (ms)" : pid.PidFriendlyName;
