@@ -1,4 +1,4 @@
-﻿//#define MAZDA_IDS_FOLDER
+﻿
 //#define PRINT_TIMES_FOR_ALL
 
 using System;
@@ -16,11 +16,11 @@ namespace MazdaIDS_Decoder
         // Magic for data: 0x04 0x25 0x2E 0x30 0x66 0x01 
         private byte[] DATA_MAGIC = new byte[] { 0x04, 0x25, 0x2E, 0x30, 0x66, 0x01, 0x00 };
         private byte[] DATA_END_MAGIC = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0xD4, 0x01, 0x00 };
-        internal string[] PIDS = new string[] { "AFR", "APP", "BAT", "FUEL_PRES", "IAT", "KNOCKR",
+        internal static string[] PIDS = new string[] { "AFR", "APP", "BAT", "FUEL_PRES", "IAT", "KNOCKR",
                                                 "LOAD", "MAF_V", "MAFg/s", "MAP", "RPM", "SHRTFT",
                                                 "SPARKADV", "TP1_MZ", "TP_REL", "VSS", "VT_ACT",
                                                 "LONGFT", "WGC", "FUELPW", "BARO" };
-        internal string[] PID_TITLES = new string[] { "Actual AFR (AFR)", "APP (%)", "Boost Air Temp. (°C)",
+        internal static string[] PID_TITLES = new string[] { "Actual AFR (AFR)", "APP (%)", "Boost Air Temp. (°C)",
                                                 "HPFP (PSI)", "Intake Air Temp. (°C)", "KNOCKR (°)",
                                                 "Calculated Load (Load)", "MAF Voltage (V)", "Mass Airflow (g/s)", "Boost (PSI)",
                                                 "RPM", "Short Term FT (%)", "Spark Adv. (°)", "Throttle Position (%)", "Relative Throttle Position (%)",
@@ -35,12 +35,22 @@ namespace MazdaIDS_Decoder
 
         private const int BUFFER_SIZE = 4539422;
 
-        private const string MAZDA_IDS_LOG_PATH = @"C:\ProgramData\Ford Motor Company\IDS\Sessions";
-        private const string USER_LOG_FILES = @"C:\Users\janw\Documents\SPEED3\VersaTune Maps\Mazda IDS Logs";
+        private static string[] MAZDA_IDS_LOG_PATHS = new string[] { 
+            @"C:\ProgramData\Ford Motor Company\IDS\Sessions",
+            @"C:\Users\janw\Documents\SPEED3\VersaTune Maps\Mazda IDS Logs"
+        };
         private const string MAZDA_IDS_LOG_EXT = ".ddl";
 
         private List<FileInfo> _logs = new List<FileInfo>();
         private Dictionary<FileInfo, List<PidData>> _convertedData = new Dictionary<FileInfo, List<PidData>>();
+        private string _folderToRead;
+
+        #region Properties
+
+        public static string[] KnownPaths
+        {
+            get { return MAZDA_IDS_LOG_PATHS; }
+        }
 
         public Dictionary<FileInfo, List<PidData>> ParsedData
         {
@@ -52,7 +62,23 @@ namespace MazdaIDS_Decoder
             get { return _logs; }
         }
 
-        private void UpdateTempUnits(bool celsiusChecked)
+        #endregion
+
+        #region Constructor
+
+        public MazdaIDS_DDL_Parser(string logFolder)
+        {
+            if (string.IsNullOrEmpty(logFolder))
+            {
+                throw new Exception("No log folder specified to read");
+            }
+
+            _folderToRead = logFolder;
+        }
+
+        #endregion
+
+        private static void UpdateTempUnits(bool celsiusChecked, bool kphChecked)
         {
             for (int i = 0; i < PID_TITLES.Length; i++)
             {
@@ -64,31 +90,30 @@ namespace MazdaIDS_Decoder
                 {
                     PID_TITLES[i] = PID_TITLES[i].Replace("(°F)", "(°C)");
                 }
+
+                // KPH and MPH
+                if (!kphChecked && PID_TITLES[i].Contains("(KPH)"))
+                {
+                    PID_TITLES[i] = PID_TITLES[i].Replace("(KPH)", "(MPH)");
+                }
+                else if (kphChecked && PID_TITLES[i].Contains("(MPH)"))
+                {
+                    PID_TITLES[i] = PID_TITLES[i].Replace("(MPH)", "(KPH)");
+                }
             }
         }
-
-
         
         public int ReadAvailableMazdaFiles()
         {
-#if MAZDA_IDS_FOLDER
-            // Open the default directory and check for the DDL files
-            foreach (var logFile in Directory.EnumerateFiles(MAZDA_IDS_LOG_PATH, "*" + MAZDA_IDS_LOG_EXT))
+            foreach (var logFile in Directory.EnumerateFiles(_folderToRead, "*" + MAZDA_IDS_LOG_EXT))
             {
                 _logs.Add(new FileInfo(logFile));
             }
-#else
-
-            foreach (var logFile in Directory.EnumerateFiles(USER_LOG_FILES, "*" + MAZDA_IDS_LOG_EXT))
-            {
-                _logs.Add(new FileInfo(logFile));
-            }
-#endif
 
             return _logs.Count;
         }
 
-        public bool ConvertFileToCSV(ICollection<int> indices, bool isCelsius)
+        public bool ConvertFileToCSV(string saveFolder, ICollection<int> indices, bool isCelsius, bool kphChecked)
         {
             if (indices.Count < 1)
             {
@@ -96,7 +121,7 @@ namespace MazdaIDS_Decoder
             }
 
             // update the title units accordingly
-            UpdateTempUnits(isCelsius);
+            UpdateTempUnits(isCelsius, kphChecked);
 
             foreach (int index in indices)
             {
@@ -113,10 +138,22 @@ namespace MazdaIDS_Decoder
                 long maxTime = long.MinValue;
                 GetMaxAndMinTime(data, ref minTime, ref maxTime);
 
-                FormatAndCreateCSV(_logs[index], minTime, maxTime, isCelsius, firstRowUpperBounds);
+                FormatAndCreateCSV(saveFolder, _logs[index], minTime, maxTime, isCelsius, kphChecked, firstRowUpperBounds);
             }
 
             return true;
+        }
+
+        public void ConvertSelectedLog(int index)
+        {
+            List<PidData> data = new List<PidData>();
+
+            long firstRowUpperBounds = ReadDDLFile(data, _logs[index]);
+
+            if (data.Count != 0 && !_convertedData.ContainsKey(_logs[index]))
+            {
+                _convertedData.Add(_logs[index], data);
+            }
         }
 
         private long ReadDDLFile(List<PidData> data, FileInfo info)
@@ -361,7 +398,7 @@ namespace MazdaIDS_Decoder
             }
         }
 
-        private void FormatAndCreateCSV(FileInfo info, long minTime, long maxTime, bool isCelsius, long firstRowUpperBounds)
+        private void FormatAndCreateCSV(string saveFolder, FileInfo info, long minTime, long maxTime, bool isCelsius, bool kphChecked, long firstRowUpperBounds)
         {
             // Stores the index of the current position in the list for each PID entry
             Dictionary<string, int> currentPidIndex = new Dictionary<string, int>();
@@ -403,28 +440,29 @@ namespace MazdaIDS_Decoder
 
             // string tempFile = Guid.NewGuid().ToString();
             string tempFile = info.Name + "-" + Guid.NewGuid().ToString().Substring(0, 8);
-            using (StreamWriter wr = new StreamWriter(string.Format(@"{1}\{0}.csv", tempFile, info.DirectoryName), false, Encoding.GetEncoding("Windows-1252")))
+            using (StreamWriter wr = new StreamWriter(string.Format(@"{1}\{0}.csv", tempFile, saveFolder), false, Encoding.GetEncoding("Windows-1252")))
             {
                 wr.Write("Time (sec),");
 
                 // Write the headers
                 wr.Write(string.Format("{0}{1}", string.Join(",", pidTitles), Environment.NewLine));
 
-                PrintRowToCSV(currentTime, currentPidIndex, pidList, wr, isCelsius, minTime);
+                PrintRowToCSV(currentTime, currentPidIndex, pidList, wr, isCelsius, kphChecked, minTime);
 
                 // Loop until we've displayed all the values.
                 long loops = 1;
                 do
                 {
                     GetNextPids(currentPidIndex, pidList, minMaxLogEntries, ref currentTime);
-                    PrintRowToCSV(currentTime, currentPidIndex, pidList, wr, isCelsius, minTime);
+                    PrintRowToCSV(currentTime, currentPidIndex, pidList, wr, isCelsius, kphChecked, minTime);
 
                     loops++;
                 } while (loops <= minMaxLogEntries);
             }
         }
 
-        private void PrintRowToCSV(long currentTime, Dictionary<string, int> currentPidIndex, List<PidData> pidList, StreamWriter wr, bool isCelsius, long minTime)
+        private void PrintRowToCSV(long currentTime, Dictionary<string, int> currentPidIndex, 
+                                    List<PidData> pidList, StreamWriter wr, bool isCelsius, bool kphChecked, long minTime)
         {
             // Write the time
             wr.Write(string.Format("{0:0.000},", (double)currentTime/1000));
@@ -435,10 +473,10 @@ namespace MazdaIDS_Decoder
             for (int i = 0; i < pidList.Count; i++)
             {
                 var readIndex = currentPidIndex[pidList[i].PidName];
-                var value = pidList[i].GetConvertedValue(pidList[i].DataEntries[readIndex].Value, isCelsius);
+                var value = pidList[i].GetConvertedValue(pidList[i].DataEntries[readIndex].Value, isCelsius, kphChecked);
 
                 var rpmIndex = currentPidIndex["RPM"];
-                var rpm = pidList[rpmPidDataIndex].GetConvertedValue(pidList[rpmPidDataIndex].DataEntries[rpmIndex].Value, isCelsius);
+                var rpm = pidList[rpmPidDataIndex].GetConvertedValue(pidList[rpmPidDataIndex].DataEntries[rpmIndex].Value, isCelsius, kphChecked);
 
                 // Write the values to file
                 if (pidList[i].PidName.Equals("LOAD"))
@@ -529,10 +567,21 @@ namespace MazdaIDS_Decoder
                 get { return _pidName; }
             }
 
+            public string PidFriendlyName
+            {
+                get
+                {
+                    return PID_TITLES[Array.IndexOf(PIDS, _pidName)];
+                }
+            }
+
             public List<PidEntry> DataEntries
             {
                 get { return _dataEntries; }
             }
+
+
+            #region Constructor
 
             public PidData(string name)
             {
@@ -545,6 +594,10 @@ namespace MazdaIDS_Decoder
                 _pidName = name;
             }
 
+            #endregion
+
+            #region Public methods
+
             public void AddData(long time, uint value)
             {
                 var newEntry = new PidEntry(time, value);
@@ -552,7 +605,7 @@ namespace MazdaIDS_Decoder
                 _dataEntries.Add(newEntry);
             }
 
-            public object GetConvertedValue(uint value, bool isCelsius)
+            public object GetConvertedValue(uint value, bool isCelsius, bool kphChecked)
             {
                 // AFR:  (<value> * 49) / 430
                 // APP:  (<value> * 100) / 255                   %
@@ -607,7 +660,7 @@ namespace MazdaIDS_Decoder
                     case "TP1_MZ":
                         return (double)(useValue * 100) / 255;
                     case "VSS":
-                        return (double)useValue;
+                        return GetSpeed((double)useValue, kphChecked);
                     case "VT_ACT":
                         var retVal = (double)(useValue - 0.08) / 16;
 
@@ -626,6 +679,10 @@ namespace MazdaIDS_Decoder
                 }
             }
 
+            #endregion
+
+            #region Private methods
+
             private double GetCorrectTemp(double temp, bool isCelsius)
             {
                 if (isCelsius)
@@ -633,6 +690,16 @@ namespace MazdaIDS_Decoder
                 else
                     return ((temp * 9) / 5) + 32;
             }
+
+            private double GetSpeed(double raw, bool isKph)
+            {
+                if (isKph)
+                    return raw;
+                else
+                    return raw * 0.62137;
+            }
+
+            #endregion
         }
     }
 }
