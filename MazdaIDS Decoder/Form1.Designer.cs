@@ -30,6 +30,7 @@
         {
             System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
             System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.lstLogFiles = new System.Windows.Forms.CheckedListBox();
             this.btnClear = new System.Windows.Forms.Button();
             this.btnConvert = new System.Windows.Forms.Button();
@@ -38,6 +39,7 @@
             this.lblStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.tabCtrl = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
+            this.btnGraphHighlightedLog = new System.Windows.Forms.Button();
             this.panel1 = new System.Windows.Forms.Panel();
             this.radioMPH = new System.Windows.Forms.RadioButton();
             this.radioKPH = new System.Windows.Forms.RadioButton();
@@ -49,7 +51,8 @@
             this.label2 = new System.Windows.Forms.Label();
             this.lblTemps = new System.Windows.Forms.Label();
             this.tabPage2 = new System.Windows.Forms.TabPage();
-            this.chkPids = new System.Windows.Forms.ListBox();
+            this.label6 = new System.Windows.Forms.Label();
+            this.label5 = new System.Windows.Forms.Label();
             this.chart1 = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -58,9 +61,7 @@
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.folderBrowserDlg = new System.Windows.Forms.FolderBrowserDialog();
-            this.btnGraphHighlightedLog = new System.Windows.Forms.Button();
-            this.label5 = new System.Windows.Forms.Label();
-            this.label6 = new System.Windows.Forms.Label();
+            this.chkComboBox = new MazdaIDS_Decoder.CheckedComboBox();
             this.statusBar.SuspendLayout();
             this.tabCtrl.SuspendLayout();
             this.tabPage1.SuspendLayout();
@@ -162,6 +163,17 @@
             this.tabPage1.Size = new System.Drawing.Size(704, 269);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "DDL Files";
+            // 
+            // btnGraphHighlightedLog
+            // 
+            this.btnGraphHighlightedLog.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
+            this.btnGraphHighlightedLog.Location = new System.Drawing.Point(441, 234);
+            this.btnGraphHighlightedLog.Name = "btnGraphHighlightedLog";
+            this.btnGraphHighlightedLog.Size = new System.Drawing.Size(129, 23);
+            this.btnGraphHighlightedLog.TabIndex = 14;
+            this.btnGraphHighlightedLog.Text = "Graph Highlighted Log";
+            this.btnGraphHighlightedLog.UseVisualStyleBackColor = true;
+            this.btnGraphHighlightedLog.Click += new System.EventHandler(this.btnGraphHighlightedLog_Click);
             // 
             // panel1
             // 
@@ -270,9 +282,9 @@
             // tabPage2
             // 
             this.tabPage2.BackColor = System.Drawing.SystemColors.ButtonFace;
+            this.tabPage2.Controls.Add(this.chkComboBox);
             this.tabPage2.Controls.Add(this.label6);
             this.tabPage2.Controls.Add(this.label5);
-            this.tabPage2.Controls.Add(this.chkPids);
             this.tabPage2.Controls.Add(this.chart1);
             this.tabPage2.Location = new System.Drawing.Point(4, 22);
             this.tabPage2.Name = "tabPage2";
@@ -281,14 +293,24 @@
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "Charts";
             // 
-            // chkPids
+            // label6
             // 
-            this.chkPids.FormattingEnabled = true;
-            this.chkPids.Location = new System.Drawing.Point(734, 4);
-            this.chkPids.Name = "chkPids";
-            this.chkPids.Size = new System.Drawing.Size(158, 17);
-            this.chkPids.TabIndex = 2;
-            this.chkPids.SelectedIndexChanged += new System.EventHandler(this.chkPids_SelectedIndexChanged);
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(41, 6);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(205, 13);
+            this.label6.TabIndex = 4;
+            this.label6.Text = "Expand window to view the charts clearly.";
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label5.Location = new System.Drawing.Point(6, 6);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(38, 13);
+            this.label5.TabIndex = 3;
+            this.label5.Text = "Note:";
             // 
             // chart1
             // 
@@ -364,36 +386,20 @@
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
-            // btnGraphHighlightedLog
+            // chkComboBox
             // 
-            this.btnGraphHighlightedLog.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
-            this.btnGraphHighlightedLog.Location = new System.Drawing.Point(441, 234);
-            this.btnGraphHighlightedLog.Name = "btnGraphHighlightedLog";
-            this.btnGraphHighlightedLog.Size = new System.Drawing.Size(129, 23);
-            this.btnGraphHighlightedLog.TabIndex = 14;
-            this.btnGraphHighlightedLog.Text = "Graph Highlighted Log";
-            this.btnGraphHighlightedLog.UseVisualStyleBackColor = true;
-            this.btnGraphHighlightedLog.Click += new System.EventHandler(this.btnGraphHighlightedLog_Click);
-            // 
-            // label5
-            // 
-            this.label5.AutoSize = true;
-            this.label5.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label5.Location = new System.Drawing.Point(6, 6);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(38, 13);
-            this.label5.TabIndex = 3;
-            this.label5.Text = "Note:";
-            // 
-            // label6
-            // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(41, 6);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(416, 13);
-            this.label6.TabIndex = 4;
-            this.label6.Text = "Expand window to view dropdown. Scroll to view PIDs and click to add/remove serie" +
-    "s.";
+            this.chkComboBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.chkComboBox.CheckOnClick = true;
+            this.chkComboBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
+            this.chkComboBox.DropDownHeight = 1;
+            this.chkComboBox.FormattingEnabled = true;
+            this.chkComboBox.IntegralHeight = false;
+            this.chkComboBox.Location = new System.Drawing.Point(465, 3);
+            this.chkComboBox.Name = "chkComboBox";
+            this.chkComboBox.Size = new System.Drawing.Size(233, 21);
+            this.chkComboBox.TabIndex = 5;
+            this.chkComboBox.ValueSeparator = ", ";
+            this.chkComboBox.Click += new System.EventHandler(this.chkComboBox_Click);
             // 
             // Form1
             // 
@@ -404,7 +410,7 @@
             this.Controls.Add(this.statusBar);
             this.Controls.Add(this.menuStrip1);
             this.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.MaximizeBox = false;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MinimumSize = new System.Drawing.Size(742, 384);
             this.Name = "Form1";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
@@ -441,7 +447,6 @@
         private System.Windows.Forms.TabPage tabPage1;
         private System.Windows.Forms.TabPage tabPage2;
         private System.Windows.Forms.DataVisualization.Charting.Chart chart1;
-        private System.Windows.Forms.ListBox chkPids;
         private System.Windows.Forms.RadioButton radioCelsius;
         private System.Windows.Forms.Label lblTemps;
         private System.Windows.Forms.RadioButton radioFahrenheit;
@@ -462,6 +467,7 @@
         private System.Windows.Forms.Button btnGraphHighlightedLog;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.Label label5;
+        private CheckedComboBox chkComboBox;
     }
 }
 

@@ -34,6 +34,8 @@ namespace MazdaIDS_Decoder
                     SetupMazdaLogParser(path);
                 }
             }
+
+            chkComboBox.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.chkComboBox_ItemCheck);
         }
 
         private void btnClear_Click(object sender, EventArgs e)
@@ -132,7 +134,7 @@ namespace MazdaIDS_Decoder
                 var data = dic[_mazdaLogParser.Logs[lstLogFiles.SelectedIndex]];
 
                 chart1.Series.Clear();
-                chkPids.Items.Clear();
+                chkComboBox.Items.Clear();
 
                 foreach (var pid in data)
                 {
@@ -154,9 +156,9 @@ namespace MazdaIDS_Decoder
                     chart1.Series[pidName].Enabled = false;
 
                     // The checkbox for enabling and disabling series
-                    if (!chkPids.Items.Contains(pidName))
+                    if (!chkComboBox.Items.Contains(pidName))
                     {
-                        chkPids.Items.Add(pidName);
+                        chkComboBox.Items.Add(pidName);
                     }
                 }
             }
@@ -167,23 +169,17 @@ namespace MazdaIDS_Decoder
             HitTestResult result = chart1.HitTest(e.X, e.Y);
             if (result != null && result.Series != null)
             {
-                result.Series.Enabled = !result.Series.Enabled;
-                chart1.ChartAreas["ChartArea1"].RecalculateAxesScale();
-                chart1.Update();
+                var index = chkComboBox.Items.IndexOf(result.Series.Name);
+                chkComboBox.SetItemCheckState(index, CheckState.Unchecked);
             }
         }
 
-        private void chkPids_SelectedIndexChanged(object sender, EventArgs e)
+        private void chkComboBox_ItemCheck(object sender, ItemCheckEventArgs e)
         {
-            if (sender is ListBox)
-            {
-                ListBox chkLst = sender as ListBox;
-                string name = chkLst.SelectedItem.ToString();
-
-                chart1.Series[name].Enabled = !chart1.Series[name].Enabled;
-                chart1.ChartAreas["ChartArea1"].RecalculateAxesScale();
-                chart1.Update();
-            }
+            string item = chkComboBox.Items[e.Index] as string;
+            chart1.Series[item].Enabled = !chart1.Series[item].Enabled;
+            chart1.ChartAreas["ChartArea1"].RecalculateAxesScale();
+            chart1.Update();
         }
 
         private void SetupMazdaLogParser(string logFolder)
@@ -280,6 +276,11 @@ namespace MazdaIDS_Decoder
             }
 
             return mazdaKey;
+        }
+
+        private void chkComboBox_Click(object sender, EventArgs e)
+        {
+            chkComboBox.DoDropDown();
         }
     }
 }
