@@ -1,0 +1,7 @@
+<project outputDir="." baseDir=".\MazdaIDS Decoder\bin\Release" xmlns="http://confuser.codeplex.com">
+  <rule pattern="true" inherit="false" />
+  <packer id="compressor" />
+  <module path="Mazda IDS Log Parser.exe">
+    <rule pattern="true" inherit="false" />
+  </module>
+</project>
