@@ -126,7 +126,10 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>"$(SolutionDir)Confuser\Confuser.CLI.exe" "$(SolutionDir)ObfustacatorSettings.crproj"</PostBuildEvent>
+    <PostBuildEvent>if $(ConfigurationName) == Release ( 
+    "$(SolutionDir)Confuser\Confuser.CLI.exe" "$(SolutionDir)ObfustacatorSettings.crproj"
+)
+</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
