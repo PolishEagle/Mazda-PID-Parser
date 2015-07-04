@@ -129,7 +129,6 @@ namespace MazdaIDS_Decoder
             // Plot the data
             if (_mazdaLogParser.ParsedData.Count != 0)
             {
-                // TODO: Make this work with any log file, not just 2
                 var dic = _mazdaLogParser.ParsedData;
                 var data = dic[_mazdaLogParser.Logs[lstLogFiles.SelectedIndex]];
 
@@ -140,13 +139,22 @@ namespace MazdaIDS_Decoder
                 {
                     var pidName = pid.PidName.Equals("FUELPW") ? "Injector Pulse Width (ms)" : pid.PidFriendlyName;
 
+                    // Remove the celsius/kph accordingly
+                    if (!isCelsius)
+                        pidName = pidName.Replace("(°C)", "(°F)");
+
+                    if (!kphChecked)
+                        pidName = pidName.Replace("(KPH)", "(MPH)");
+
+                    // Add the series
                     if (chart1.Series.Where<Series>(s => s.Name.Equals(pidName)).Count() == 0)
                     {
                         chart1.Series.Add(pidName);
 
                         foreach (var entry in pid.DataEntries)
                         {
-                            var convertedValue = (double)pid.GetConvertedValue(entry.Value, isCelsius, kphChecked);
+                            var convertedValue = Math.Round((double)pid.GetConvertedValue(entry.Value, isCelsius, kphChecked),
+                                pid.PidName.Equals("LOAD") ? 3 : 2);
 
                             chart1.Series[pidName].ToolTip = "#VALY, #VALX";
                             chart1.Series[pidName].Points.Add(new DataPoint(entry.Time, convertedValue));
@@ -261,8 +269,6 @@ namespace MazdaIDS_Decoder
             if (rst == DialogResult.OK)
             {
                 var logFolder = folderBrowserDlg.SelectedPath;
-
-                SetupMazdaLogParser(logFolder);
 
                 var mazdaKey = GetMazdaRegKey();
                 mazdaKey.SetValue(KEY_SAVE_PATH, logFolder, RegistryValueKind.String);

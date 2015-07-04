@@ -1,4 +1,4 @@
-﻿
+﻿//#define USE_MIN_VALUE
 //#define PRINT_TIMES_FOR_ALL
 
 using System;
@@ -507,7 +507,13 @@ namespace MazdaIDS_Decoder
 
         private void GetNextPids(Dictionary<string, int> currentPidEntry, List<PidData> pidList, long minMaxLogEntries, ref long currentTime)
         {
-            long newTime = long.MinValue;
+            long newTime;
+
+#if USE_MIN_VALUE
+            newTime = long.MaxValue;
+#else
+            newTime = long.MinValue;
+#endif
 
             // Now that we have the newer time lets adjust the current PID indexes accordingly
             for (int i = 0; i < pidList.Count; i++)
@@ -521,7 +527,11 @@ namespace MazdaIDS_Decoder
 
                 var entry = pid.DataEntries[currentPidEntry[pid.PidName]];
 
+#if USE_MIN_VALUE
+                if (entry.Time < newTime)
+#else
                 if (entry.Time > newTime)
+#endif
                 {
                     newTime = entry.Time;
                 }
