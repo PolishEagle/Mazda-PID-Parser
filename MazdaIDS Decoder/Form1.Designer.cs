@@ -51,6 +51,7 @@
             this.label2 = new System.Windows.Forms.Label();
             this.lblTemps = new System.Windows.Forms.Label();
             this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.chkComboBox = new MazdaIDS_Decoder.CheckedComboBox();
             this.label6 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.chart1 = new System.Windows.Forms.DataVisualization.Charting.Chart();
@@ -61,7 +62,6 @@
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.folderBrowserDlg = new System.Windows.Forms.FolderBrowserDialog();
-            this.chkComboBox = new MazdaIDS_Decoder.CheckedComboBox();
             this.statusBar.SuspendLayout();
             this.tabCtrl.SuspendLayout();
             this.tabPage1.SuspendLayout();
@@ -293,6 +293,21 @@
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "Charts";
             // 
+            // chkComboBox
+            // 
+            this.chkComboBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.chkComboBox.CheckOnClick = true;
+            this.chkComboBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
+            this.chkComboBox.DropDownHeight = 1;
+            this.chkComboBox.FormattingEnabled = true;
+            this.chkComboBox.IntegralHeight = false;
+            this.chkComboBox.Location = new System.Drawing.Point(465, 3);
+            this.chkComboBox.Name = "chkComboBox";
+            this.chkComboBox.Size = new System.Drawing.Size(233, 21);
+            this.chkComboBox.TabIndex = 5;
+            this.chkComboBox.ValueSeparator = ", ";
+            this.chkComboBox.Click += new System.EventHandler(this.chkComboBox_Click);
+            // 
             // label6
             // 
             this.label6.AutoSize = true;
@@ -385,21 +400,6 @@
             this.exitToolStripMenuItem.Size = new System.Drawing.Size(143, 22);
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
-            // 
-            // chkComboBox
-            // 
-            this.chkComboBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.chkComboBox.CheckOnClick = true;
-            this.chkComboBox.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
-            this.chkComboBox.DropDownHeight = 1;
-            this.chkComboBox.FormattingEnabled = true;
-            this.chkComboBox.IntegralHeight = false;
-            this.chkComboBox.Location = new System.Drawing.Point(465, 3);
-            this.chkComboBox.Name = "chkComboBox";
-            this.chkComboBox.Size = new System.Drawing.Size(233, 21);
-            this.chkComboBox.TabIndex = 5;
-            this.chkComboBox.ValueSeparator = ", ";
-            this.chkComboBox.Click += new System.EventHandler(this.chkComboBox_Click);
             // 
             // Form1
             // 
