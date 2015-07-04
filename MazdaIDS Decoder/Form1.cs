@@ -193,6 +193,9 @@ namespace MazdaIDS_Decoder
 
             SetStatusBarText(string.Format("{0} log(s) found!", logs));
 
+            // Remove any existing items
+            lstLogFiles.Items.Clear();
+
             // Display the files to the checkbox
             foreach (FileInfo fileDetails in _mazdaLogParser.Logs)
             {
