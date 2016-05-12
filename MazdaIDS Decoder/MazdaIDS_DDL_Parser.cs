@@ -21,11 +21,12 @@ namespace MazdaIDS_Decoder
                                                 "LOAD", "MAF_V", "MAFg/s", "MAP", "RPM", "SHRTFT",
                                                 "SPARKADV", "TP1_MZ", "TP_REL", "VSS", "VT_ACT",
                                                 "LONGFT", "WGC", "FUELPW", "BARO" };
+        // TODO: injector PWM was added in a hacky way
         internal static string[] PID_TITLES = new string[] { "Actual AFR (AFR)", "APP (%)", "Boost Air Temp. (°C)",
                                                 "HPFP (PSI)", "Intake Air Temp. (°C)", "KNOCKR (°)",
                                                 "Calculated Load (Load)", "MAF Voltage (V)", "Mass Airflow (g/s)", "Boost (PSI)",
                                                 "RPM", "Short Term FT (%)", "Spark Adv. (°)", "Throttle Position (%)", "Relative Throttle Position (%)",
-                                                "Speed (KPH)", "Intake Valve Adv. (°)", "Long Term FT (%)", "Wastegate Duty (%)", "Injector Duty (%)",
+                                                "Speed (KPH)", "Intake Valve Adv. (°)", "Long Term FT (%)", "Wastegate Duty (%)", "Injector Duty (%), Injector Pulse Width (ms)",
                                                 "Barometric Pressure (PSI)" };
 
         // How many bytes after the start of the magic where the data starts
@@ -486,7 +487,8 @@ namespace MazdaIDS_Decoder
                 }
                 else if (pidList[i].PidName.Equals("FUELPW"))
                 {
-                    wr.Write(string.Format("{0:0.00}", (double)((double)value * (double)rpm) / 1200));
+                    wr.Write(string.Format("{0:0.00}", (double)((double)value * (double)rpm) / 600));
+                    wr.Write(string.Format(", {0:0.000}", value));
                 }
                 else
                 {
